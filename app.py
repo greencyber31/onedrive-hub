@@ -7,7 +7,7 @@ app = Flask(__name__)
 # REPLACE THIS URL:
 # Go to your Google Sheet -> File -> Share -> Publish to Web
 # Select "Link" and "Comma-separated values (.csv)"
-SHEET_CSV_URL = https://docs.google.com/spreadsheets/d/e/2PACX-1vQ0yR4gNYKqNsZYVhtncB5lYaM4QEB3TL5QlaTlydbniXL5xnHDW2aMp_syjb9IEIoe8yqU5YCtCCpy/pub?gid=0&single=true&output=csv
+SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ0yR4gNYKqNsZYVhtncB5lYaM4QEB3TL5QlaTlydbniXL5xnHDW2aMp_syjb9IEIoe8yqU5YCtCCpy/pub?gid=0&single=true&output=csv"
 
 @app.route('/')
 def index():
