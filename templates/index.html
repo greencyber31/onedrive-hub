@@ -19,11 +19,12 @@
         <div id="links-container">
             {% for item in links %}
             <div class="link-item">
-                <span class="file-name">{{ item.file_name }}</span>
+                <div>
+                    <span class="file-name">{{ item.file_name }}</span><br>
+                    <small style="color: #666;">Location: {{ item.folder_path }}</small>
+                </div>
                 <a href="{{ item.new_link }}" class="btn" target="_blank">View Folder</a>
             </div>
-            {% else %}
-            <p>No links found. Try moving a file in OneDrive!</p>
             {% endfor %}
         </div>
     </div>

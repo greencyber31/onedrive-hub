@@ -14,15 +14,13 @@ def index():
     try:
         df = pd.read_csv(SHEET_CSV_URL)
 
-        # This is the magic line:
-        # It keeps only the last occurrence of each file_name
-        df_clean = df.drop_duplicates(subset=['file_name'], keep='last')
+        # Now we check both file_name and folder_path for duplicates
+        df_clean = df.drop_duplicates(subset=['file_name', 'folder_path'], keep='last')
 
         links = df_clean.to_dict('records')
     except Exception as e:
         print(f"Error: {e}")
         links = []
-
     return render_template('index.html', links=links)
 
 if __name__ == '__main__':
