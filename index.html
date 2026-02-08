@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PCIC Shared Files Hub</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f4f7f9; display: flex; justify-content: center; }
+        .card { width: 100%; max-width: 600px; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        h1 { color: #0078d4; border-bottom: 3px solid #0078d4; padding-bottom: 10px; margin-bottom: 20px; }
+        .link-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; transition: 0.2s; }
+        .link-item:hover { background: #f9f9f9; }
+        .file-info { display: flex; flex-direction: column; }
+        .file-name { font-weight: bold; color: #333; font-size: 1.1em; }
+        .folder-path { font-size: 0.85em; color: #666; margin-top: 4px; }
+        .btn { background: #0078d4; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; }
+        .btn:hover { background: #005a9e; }
+        #loading { color: #666; font-style: italic; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>PCIC Shared Hub</h1>
+        <div id="loading">Connecting to database...</div>
+        <div id="links-container"></div>
+    </div>
+
+    <script>
+        // YOUR PUBLISHED GOOGLE SHEET CSV LINK
+        const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ0yR4gNYKqNsZYVhtncB5lYaM4QEB3TL5QlaTlydbniXL5xnHDW2aMp_syjb9IEIoe8yqU5YCtCCpy/pub?gid=0&single=true&output=csv";
+
+        async function fetchLinks() {
+            try {
+                const response = await fetch(SHEET_URL);
+                const data = await response.text();
+
+                // Parse CSV (Split lines, then split commas)
+                const rows = data.split('\n').slice(1); // Skip header row
+                const container = document.getElementById('links-container');
+                const loading = document.getElementById('loading');
+
+                // Dictionary to keep only the LATEST link for each file+path
+                const latestLinks = {};
+
+                rows.forEach(row => {
+                    const columns = row.split(',');
+                    if (columns.length >= 4) {
+                        const fileId = columns[0].trim();
+                        const fileName = columns[1].trim();
+                        const link = columns[2].trim();
+                        const path = columns[3].trim();
+
+                        // Use name + path as a unique key
+                        latestLinks[fileName + path] = { fileName, link, path };
+                    }
+                });
+
+                loading.style.display = 'none';
+
+                // Render the links
+                Object.values(latestLinks).forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'link-item';
+                    div.innerHTML = `
+                        <div class="file-info">
+                            <span class="file-name">${item.fileName}</span>
+                            <span class="folder-path">Location: ${item.path}</span>
+                        </div>
+                        <a href="${item.link}" class="btn" target="_blank">Open</a>
+                    `;
+                    container.appendChild(div);
+                });
+
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                document.getElementById('loading').innerText = "Failed to load links. Check Google Sheet publishing.";
+            }
+        }
+
+        fetchLinks();
+    </script>
+</body>
+</html>
