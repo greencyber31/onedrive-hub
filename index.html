@@ -1,23 +1,85 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PCIC Shared Files Hub</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f4f7f9; display: flex; justify-content: center; }
-        .card { width: 100%; max-width: 600px; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-        h1 { color: #0078d4; border-bottom: 3px solid #0078d4; padding-bottom: 10px; margin-bottom: 20px; }
-        .link-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; transition: 0.2s; }
-        .link-item:hover { background: #f9f9f9; }
-        .file-info { display: flex; flex-direction: column; }
-        .file-name { font-weight: bold; color: #333; font-size: 1.1em; }
-        .folder-path { font-size: 0.85em; color: #666; margin-top: 4px; }
-        .btn { background: #0078d4; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; }
-        .btn:hover { background: #005a9e; }
-        #loading { color: #666; font-style: italic; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            padding: 20px;
+            background: #f4f7f9;
+            display: flex;
+            justify-content: center;
+        }
+
+        .card {
+            width: 100%;
+            max-width: 600px;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        }
+
+        h1 {
+            color: #0078d4;
+            border-bottom: 3px solid #0078d4;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .link-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            transition: 0.2s;
+        }
+
+        .link-item:hover {
+            background: #f9f9f9;
+        }
+
+        .file-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .file-name {
+            font-weight: bold;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .folder-path {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .btn {
+            background: #0078d4;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .btn:hover {
+            background: #005a9e;
+        }
+
+        #loading {
+            color: #666;
+            font-style: italic;
+        }
     </style>
 </head>
+
 <body>
     <div class="card">
         <h1>PCIC Shared Hub</h1>
@@ -39,34 +101,40 @@
                 const container = document.getElementById('links-container');
                 const loading = document.getElementById('loading');
 
-                // Dictionary to keep only the LATEST link for each file+path
-                const latestLinks = {};
+                // Dictionary to keep only the LATEST link for each folder
+                const latestFolders = {};
 
                 rows.forEach(row => {
                     const columns = row.split(',');
                     if (columns.length >= 4) {
-                        const fileId = columns[0].trim();
                         const fileName = columns[1].trim();
-                        const link = columns[2].trim();
-                        const path = columns[3].trim();
+                        const folderPath = columns[3].trim();
 
-                        // Use name + path as a unique key
-                        latestLinks[fileName + path] = { fileName, link, path };
+                        latestFolders[folderPath] = {
+                            folderPath: folderPath,
+                            folderLink: folderPath,
+                            fileName: fileName
+                        };
                     }
                 });
 
                 loading.style.display = 'none';
 
-                // Render the links
-                Object.values(latestLinks).forEach(item => {
+                // Replace 'YOUR_ORG' with your actual PCIC tenant name (e.g., pcic-gov-ph)
+                const tenant = "pcic-gov-ph";
+
+                Object.values(latestFolders).forEach(item => {
+                    // We construct the URL manually using the Folder Path
+                    const manualLink = `https://${tenant}.sharepoint.com/:f:/g/personal/diamantecarlosrock_gmail_com/Documents/${item.folderLink}`;
+
                     const div = document.createElement('div');
                     div.className = 'link-item';
                     div.innerHTML = `
                         <div class="file-info">
-                            <span class="file-name">${item.fileName}</span>
-                            <span class="folder-path">Location: ${item.path}</span>
+                            <span class="file-name">📂 ${item.folderPath}</span>
+                            <span class="folder-path">Update: ${item.fileName}</span>
                         </div>
-                        <a href="${item.link}" class="btn" target="_blank">Open</a>
+                        <a href="${manualLink}" class="btn" target="_blank">View Folder</a>
                     `;
                     container.appendChild(div);
                 });
@@ -80,4 +148,5 @@
         fetchLinks();
     </script>
 </body>
+
 </html>
