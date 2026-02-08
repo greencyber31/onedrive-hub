@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OneDrive Hub</title>
+    <style>
+        body { font-family: sans-serif; padding: 50px; background: #f4f4f4; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .link-item { margin: 10px 0; padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
+        a { color: #0078d4; text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Shared Files Hub</h1>
+        <div id="links-container">
+            {% for id, info in links.items() %}
+            <div class="link-item">
+                <span>{{ info.name }}</span>
+                <a href="{{ info.url }}" target="_blank">Open Folder</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>
