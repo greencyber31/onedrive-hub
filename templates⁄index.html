@@ -3,21 +3,27 @@
 <head>
     <title>OneDrive Hub</title>
     <style>
-        body { font-family: sans-serif; padding: 50px; background: #f4f4f4; }
-        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .link-item { margin: 10px 0; padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
-        a { color: #0078d4; text-decoration: none; font-weight: bold; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; background: #f0f2f5; }
+        .card { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h1 { color: #0078d4; border-bottom: 2px solid #0078d4; padding-bottom: 10px; }
+        .link-item { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #eee; }
+        .link-item:last-child { border-bottom: none; }
+        .file-name { font-weight: 600; color: #333; }
+        .btn { background: #0078d4; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 14px; }
+        .btn:hover { background: #005a9e; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h1>Shared Files Hub</h1>
+        <h1>PCIC Shared Hub</h1>
         <div id="links-container">
-            {% for id, info in links.items() %}
+            {% for item in links %}
             <div class="link-item">
-                <span>{{ info.name }}</span>
-                <a href="{{ info.url }}" target="_blank">Open Folder</a>
+                <span class="file-name">{{ item.file_name }}</span>
+                <a href="{{ item.new_link }}" class="btn" target="_blank">View Folder</a>
             </div>
+            {% else %}
+            <p>No links found. Try moving a file in OneDrive!</p>
             {% endfor %}
         </div>
     </div>
