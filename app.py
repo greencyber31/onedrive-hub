@@ -7,17 +7,18 @@ app = Flask(__name__)
 # REPLACE THIS URL:
 # Go to your Google Sheet -> File -> Share -> Publish to Web
 # Select "Link" and "Comma-separated values (.csv)"
-SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/YOUR_LONG_ID_HERE/pub?output=csv"
+SHEET_CSV_URL = https://docs.google.com/spreadsheets/d/e/2PACX-1vQ0yR4gNYKqNsZYVhtncB5lYaM4QEB3TL5QlaTlydbniXL5xnHDW2aMp_syjb9IEIoe8yqU5YCtCCpy/pub?gid=0&single=true&output=csv
 
 @app.route('/')
 def index():
     try:
-        # We read the CSV directly from the web
-        # Use storage_options to avoid potential header issues
         df = pd.read_csv(SHEET_CSV_URL)
 
-        # We convert the rows into a list of dictionaries for the HTML
-        links = df.to_dict('records')
+        # This is the magic line:
+        # It keeps only the last occurrence of each file_name
+        df_clean = df.drop_duplicates(subset=['file_name'], keep='last')
+
+        links = df_clean.to_dict('records')
     except Exception as e:
         print(f"Error: {e}")
         links = []
