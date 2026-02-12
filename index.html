@@ -188,19 +188,23 @@
                 // 4. RENDER RECENT FEED (THE BOTTOM SECTION)
                 container.innerHTML += '<h2 style="margin-top:40px;">🕒 Recent Activity</h2>';
 
-                // Filter out folders already in the dashboard and take the top 5
                 const dashPaths = dashboard.map(d => d.path);
                 Object.keys(recentFolders)
                     .filter(path => !dashPaths.includes(path))
-                    .slice(0, 15) // Show the 15 most recent
+                    .slice(0, 15)
                     .forEach(path => {
                         const fileName = recentFolders[path];
                         const folderName = path.split('/').pop();
 
-                        // Build a path-based link for these dynamic folders
+                        // THE FIX: We add "RO10 MSD Database 2026" before the path 
+                        // to match your OneDrive structure exactly
                         const myTenant = "pcicgov-my";
                         const myUserPath = "ro10msd_pcicgov_onmicrosoft_com";
-                        const dynamicLink = `https://${myTenant}.sharepoint.com/my?id=` + encodeURIComponent(`/personal/${myUserPath}/Documents/${path}`);
+                        const baseUrl = `https://${myTenant}.sharepoint.com/my?id=`;
+
+                        // This combines the server root with the database folder and the specific path from the sheet
+                        const fullDynamicPath = `/personal/${myUserPath}/Documents/RO10 MSD Database 2026/${path}`;
+                        const dynamicLink = baseUrl + encodeURIComponent(fullPathCleanup(fullDynamicPath));
 
                         renderCard(container, folderName, fileName, dynamicLink, false);
                     });
@@ -210,6 +214,12 @@
             } catch (error) {
                 console.error('Error:', error);
             }
+        }
+
+        // ADD THIS HELPER AT THE VERY BOTTOM OF YOUR SCRIPT
+        function fullPathCleanup(path) {
+            // This removes double slashes if they occur and cleans up the end
+            return path.replace(/\/+/g, '/').replace(/\/+$/, '');
         }
 
         // HELPER FUNCTION TO RENDER CARDS
