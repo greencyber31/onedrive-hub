@@ -77,6 +77,11 @@
             color: #666;
             font-style: italic;
         }
+
+        .actions {
+            display: flex;
+            align-items: center;
+        }
     </style>
 </head>
 
@@ -89,59 +94,82 @@
 
     <script>
         // YOUR PUBLISHED GOOGLE SHEET CSV LINK
-        const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ0yR4gNYKqNsZYVhtncB5lYaM4QEB3TL5QlaTlydbniXL5xnHDW2aMp_syjb9IEIoe8yqU5YCtCCpy/pub?gid=0&single=true&output=csv";
+        let SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ0yR4gNYKqNsZYVhtncB5lYaM4QEB3TL5QlaTlydbniXL5xnHDW2aMp_syjb9IEIoe8yqU5YCtCCpy/pub?gid=0&single=true&output=csv";
+
+        // Check for test mode
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('test') === 'true') {
+            SHEET_URL = "mock_data.csv";
+            console.log("Running in TEST MODE: Using mock_data.csv");
+            document.title = "[TEST MODE] " + document.title;
+        }
 
         async function fetchLinks() {
             try {
                 const response = await fetch(SHEET_URL);
                 const data = await response.text();
-
-                // Parse CSV (Split lines, then split commas)
-                const rows = data.split('\n').slice(1); // Skip header row
+                const rows = data.split('\n').slice(1);
                 const container = document.getElementById('links-container');
                 const loading = document.getElementById('loading');
 
-                // Dictionary to keep only the LATEST link for each folder
-                const latestFolders = {};
+                // 1. YOUR PERMANENT MAIN FOLDERS
+                // Note: The 'path' must match what Power Automate sends to the Google Sheet.
+                const dashboard = [
+                    { label: "Shared Online MSD Files", path: "Shared Online MSD Files", lastFile: "No recent activity" },
+                    { label: "Logbooks (Encoding/Evaluation)", path: "Shared Online MSD Files/LOGBOOKS Uploaded for Encoding and Evaluation", lastFile: "No recent activity" },
+                    { label: "DAR", path: "Shared Online MSD Files/DAR", lastFile: "No recent activity" },
+                    { label: "Trackers", path: "Shared Online MSD Files/Trackers", lastFile: "No recent activity" },
+                    { label: "Monitoring & Reports", path: "Shared Online MSD Files/Monitoring & Reports", lastFile: "No recent activity" }
+                ];
 
+                // 2. MATCH UPDATES FROM GOOGLE SHEET
                 rows.forEach(row => {
                     const columns = row.split(',');
                     if (columns.length >= 4) {
                         const fileName = columns[1].trim();
-                        const folderPath = columns[3].trim();
+                        const sheetPath = columns[3].trim();
 
-                        latestFolders[folderPath] = {
-                            folderPath: folderPath,
-                            folderLink: folderPath,
-                            fileName: fileName
-                        };
+                        // Find the matching dashboard item
+                        // This checks if the sheetPath starts with our folder path
+                        const folderMatch = dashboard.find(item => sheetPath.includes(item.path));
+                        if (folderMatch) {
+                            folderMatch.lastFile = fileName;
+                        }
                     }
                 });
 
                 loading.style.display = 'none';
+                container.innerHTML = '';
 
-                // Replace 'YOUR_ORG' with your actual PCIC tenant name (e.g., pcic-gov-ph)
-                const tenant = "pcic-gov-ph";
+                // 3. RENDER THE DASHBOARD
+                const myTenant = "pcicgov-my";
+                const myUserPath = "ro10msd_pcicgov_onmicrosoft_com";
+                const baseUrl = `https://${myTenant}.sharepoint.com/my?id=`;
+                const docRoot = `/personal/${myUserPath}/Documents/`;
 
-                Object.values(latestFolders).forEach(item => {
-                    // We construct the URL manually using the Folder Path
-                    const manualLink = `https://${tenant}.sharepoint.com/:f:/g/personal/diamantecarlosrock_gmail_com/Documents/${item.folderLink}`;
+                dashboard.forEach(item => {
+                    // Encode the link
+                    const folderLink = baseUrl + encodeURIComponent(docRoot + item.path);
 
                     const div = document.createElement('div');
                     div.className = 'link-item';
                     div.innerHTML = `
-                        <div class="file-info">
-                            <span class="file-name">📂 ${item.folderPath}</span>
-                            <span class="folder-path">Update: ${item.fileName}</span>
-                        </div>
-                        <a href="${manualLink}" class="btn" target="_blank">View Folder</a>
-                    `;
+                <div class="file-info">
+                    <span class="file-name" style="color: #0078d4; font-size: 1.2em;">📂 ${item.label}</span>
+                    <span class="folder-path" style="font-style: italic; color: #555; margin-top: 5px;">
+                        Last modified file: <strong>${item.lastFile}</strong>
+                    </span>
+                </div>
+                <div class="actions">
+                    <a href="${folderLink}" class="btn" target="_blank">Open Folder</a>
+                </div>
+            `;
                     container.appendChild(div);
                 });
 
             } catch (error) {
-                console.error('Error fetching data:', error);
-                document.getElementById('loading').innerText = "Failed to load links. Check Google Sheet publishing.";
+                console.error('Error:', error);
+                document.getElementById('loading').innerText = "Syncing Error. Please refresh.";
             }
         }
 
