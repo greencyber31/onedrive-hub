@@ -113,13 +113,13 @@
                 const loading = document.getElementById('loading');
 
                 // 1. THE DASHBOARD LIST
-                // Note: These paths are RELATIVE to the docRoot below
+                // These paths must match the folder names inside your "Shared" folder exactly.
                 const dashboard = [
-                    { label: "Shared Online MSD Files", path: "", lastFile: "No recent activity" },
-                    { label: "Logbooks (Encoding/Evaluation)", path: "LOGBOOKS Uploaded for Encoding and Evaluation", lastFile: "No recent activity" },
-                    { label: "DAR", path: "DAR", lastFile: "No recent activity" },
-                    { label: "Trackers", path: "Trackers", lastFile: "No recent activity" },
-                    { label: "Monitoring & Reports", path: "Monitoring & Reports", lastFile: "No recent activity" }
+                    { label: "Shared Online MSD Files", path: "", lastFile: "Waiting for update..." },
+                    { label: "Logbooks", path: "LOGBOOKS Uploaded for Encoding and Evaluation", lastFile: "Waiting for update..." },
+                    { label: "DAR", path: "DAR, TRACKER, AND MONITORING & REPORTS/DAR", lastFile: "Waiting for update..." },
+                    { label: "Trackers", path: "DAR, TRACKER, AND MONITORING & REPORTS/TRACKER", lastFile: "Waiting for update..." },
+                    { label: "Monitoring & Reports", path: "DAR, TRACKER, AND MONITORING & REPORTS/MONITORING & REPORTS", lastFile: "Waiting for update..." }
                 ];
 
                 // 2. MATCH UPDATES FROM GOOGLE SHEET
@@ -147,31 +147,31 @@
                 loading.style.display = 'none';
                 container.innerHTML = '';
 
-                // 3. RENDER THE DASHBOARD
+                // 2. THE BASE ADDRESS
                 const myTenant = "pcicgov-my";
                 const myUserPath = "ro10msd_pcicgov_onmicrosoft_com";
                 const baseUrl = `https://${myTenant}.sharepoint.com/my?id=`;
-                // This is the "Full Address" to your main Shared folder
+
+                // This is your "Main Entrance"
                 const docRoot = `/personal/${myUserPath}/Documents/RO10 MSD Database 2026/Shared Online MSD Files/`;
 
                 dashboard.forEach(item => {
-                    // We combine docRoot + the specific subfolder path
+                    // Build the specific address for each button
                     const fullPath = docRoot + item.path;
-                    const folderLink = baseUrl + encodeURIComponent(fullPath.replace(/\/+$/, '')); // Cleans trailing slashes
+                    // encodeURIComponent ensures the spaces and commas in your folder name don't break the link
+                    const folderLink = baseUrl + encodeURIComponent(fullPath.replace(/\/+$/, ''));
 
                     const div = document.createElement('div');
                     div.className = 'link-item';
                     div.innerHTML = `
-                <div class="file-info">
-                    <span class="file-name" style="color: #0078d4; font-size: 1.2em;">📂 ${item.label}</span>
-                    <span class="folder-path" style="font-style: italic; color: #555; margin-top: 5px;">
-                        Last modified file: <strong>${item.lastFile}</strong>
-                    </span>
-                </div>
-                <div class="actions">
-                    <a href="${folderLink}" class="btn" target="_blank">Open Folder</a>
-                </div>
-            `;
+                        <div class="file-info">
+                            <span class="file-name" style="color: #0078d4;">📂 ${item.label}</span>
+                            <span class="folder-path" style="font-style: italic; color: #666;">Latest: ${item.lastFile}</span>
+                        </div>
+                        <div class="actions">
+                            <a href="${folderLink}" class="btn" target="_blank">Open Folder</a>
+                        </div>
+                    `;
                     container.appendChild(div);
                 });
 
