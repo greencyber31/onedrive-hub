@@ -196,15 +196,25 @@
                         const fileName = recentFolders[path];
                         const folderName = path.split('/').pop();
 
-                        // THE FIX: We add "RO10 MSD Database 2026" before the path 
-                        // to match your OneDrive structure exactly
                         const myTenant = "pcicgov-my";
                         const myUserPath = "ro10msd_pcicgov_onmicrosoft_com";
                         const baseUrl = `https://${myTenant}.sharepoint.com/my?id=`;
 
-                        // This combines the server root with the database folder and the specific path from the sheet
-                        const fullDynamicPath = `/personal/${myUserPath}/Documents/RO10 MSD Database 2026/${path}`;
-                        const dynamicLink = baseUrl + encodeURIComponent(fullPathCleanup(fullDynamicPath));
+                        // --- UNIVERSAL PATH INTELLIGENCE ---
+                        let finalPath = path;
+
+                        // If the path from the sheet is missing the 'RO10' prefix, add it.
+                        // If it ALREADY has it, we leave it alone so we don't double it up.
+                        if (!finalPath.includes("RO10 MSD Database 2026")) {
+                            finalPath = "RO10 MSD Database 2026/" + finalPath;
+                        }
+
+                        // Ensure it starts with the mandatory SharePoint root
+                        const fullDynamicPath = `/personal/${myUserPath}/Documents/${finalPath}`;
+
+                        // Clean up any double slashes and encode
+                        const cleanedPath = fullDynamicPath.replace(/\/+/g, '/').replace(/\/+$/, '');
+                        const dynamicLink = baseUrl + encodeURIComponent(cleanedPath);
 
                         renderCard(container, folderName, fileName, dynamicLink, false);
                     });
