@@ -112,81 +112,82 @@
                 const container = document.getElementById('links-container');
                 const loading = document.getElementById('loading');
 
-                // 1. THE PERMANENT DASHBOARD
-                // I have added the new direct link you just provided!
+                // 1. PERMANENT DASHBOARD FOLDERS
                 const dashboard = [
-                    {
-                        label: "Shared Online MSD Files",
-                        path: "RO10 MSD Database 2026/Shared Online MSD Files",
-                        directLink: "https://pcicgov-my.sharepoint.com/:f:/g/personal/ro10msd_pcicgov_onmicrosoft_com/IgBzm_6kW5JhSr4AnwM97HlnAdlBqUuwLAoHRET-OpoALGo?e=AYN2yT",
-                        lastFile: "Waiting for update..."
-                    },
-                    {
-                        label: "Logbooks (Encoding/Evaluation)",
-                        path: "RO10 MSD Database 2026/Shared Online MSD Files/LOGBOOKS Uploaded for Encoding and Evaluation",
-                        directLink: "", // Still waiting for this link!
-                        lastFile: "Waiting for update..."
-                    },
-                    {
-                        label: "DAR, Trackers, & Reports Hub",
-                        path: "RO10 MSD Database 2026/Shared Online MSD Files/DAR, TRACKER, AND MONITORING & REPORTS",
-                        directLink: "https://pcicgov-my.sharepoint.com/:f:/g/personal/ro10msd_pcicgov_onmicrosoft_com/IgBzm_6kW5JhSr4AnwM97HlnAdlBqUuwLAoHRET-OpoALGo?e=nyRBOU",
-                        lastFile: "Waiting for update..."
-                    }
+                    { label: "Shared Online MSD Files", path: "RO10 MSD Database 2026/Shared Online MSD Files", directLink: "https://pcicgov-my.sharepoint.com/:f:/g/personal/ro10msd_pcicgov_onmicrosoft_com/IgBzm_6kW5JhSr4AnwM97HlnAdlBqUuwLAoHRET-OpoALGo?e=AYN2yT", lastFile: "No recent activity" },
+                    { label: "Logbooks", path: "RO10 MSD Database 2026/Shared Online MSD Files/LOGBOOKS Uploaded for Encoding and Evaluation", directLink: "", lastFile: "No recent activity" },
+                    { label: "DAR, Trackers, & Reports Hub", path: "RO10 MSD Database 2026/Shared Online MSD Files/DAR, TRACKER, AND MONITORING & REPORTS", directLink: "https://pcicgov-my.sharepoint.com/:f:/g/personal/ro10msd_pcicgov_onmicrosoft_com/IgBzm_6kW5JhSr4AnwM97HlnAdlBqUuwLAoHRET-OpoALGo?e=nyRBOU", lastFile: "No recent activity" }
                 ];
 
-                // 2. MATCH UPDATES FROM GOOGLE SHEET
-                // This helper still checks the Google Sheet for the "Latest Activity"
+                // 2. TRACKING RECENT ACTIVITY
+                const recentFolders = {};
+
                 rows.forEach(row => {
                     const columns = row.split(',');
                     if (columns.length >= 4) {
                         const fileName = columns[1].trim();
                         const sheetPath = columns[3].trim();
 
-                        // Find the matching dashboard item
-                        // We use the smart matcher to ensure we catch updates even if path formats differ
-                        const folderMatch = dashboard.find(item => {
-                            // Normalize by identifying the common "Shared Online MSD Files" part
-                            if (sheetPath.includes("Shared Online MSD Files") && item.path.includes("Shared Online MSD Files")) {
-                                return sheetPath.includes(item.path.split("Shared Online MSD Files")[1]) ||
-                                    item.path.includes(sheetPath.split("Shared Online MSD Files")[1]);
-                            }
-                            return sheetPath.includes(item.path);
-                        });
+                        // Update Dashboard activity
+                        const dashMatch = dashboard.find(item => sheetPath.includes(item.path));
+                        if (dashMatch) { dashMatch.lastFile = fileName; }
 
-                        if (folderMatch) {
-                            folderMatch.lastFile = fileName;
+                        // Collect for "Recent Activity" list
+                        if (!recentFolders[sheetPath]) {
+                            recentFolders[sheetPath] = fileName;
                         }
                     }
                 });
 
                 loading.style.display = 'none';
-                container.innerHTML = '';
+                container.innerHTML = '<h2>📌 Main Folders</h2>'; // Dashboard Header
 
+                // 3. RENDER DASHBOARD (THE TOP SECTION)
                 dashboard.forEach(item => {
-                    // Use the Direct Link if available, otherwise fallback to a generic search or #
                     const finalLink = item.directLink || "#";
-
-                    const div = document.createElement('div');
-                    div.className = 'link-item';
-                    div.innerHTML = `
-                        <div class="file-info">
-                            <span class="file-name" style="color: #0078d4; font-size: 1.2em;">📂 ${item.label}</span>
-                            <span class="folder-path" style="font-style: italic; color: #555; margin-top: 5px;">
-                                Latest update: <strong>${item.lastFile}</strong>
-                            </span>
-                        </div>
-                        <div class="actions">
-                            <a href="${finalLink}" class="btn" target="_blank">Open Folder</a>
-                        </div>
-                    `;
-                    container.appendChild(div);
+                    renderCard(container, item.label, item.lastFile, finalLink, true);
                 });
+
+                // 4. RENDER RECENT FEED (THE BOTTOM SECTION)
+                container.innerHTML += '<h2 style="margin-top:40px;">🕒 Recent Activity</h2>';
+
+                // Filter out folders already in the dashboard and take the top 5
+                const dashPaths = dashboard.map(d => d.path);
+                Object.keys(recentFolders)
+                    .filter(path => !dashPaths.includes(path))
+                    .slice(0, 5) // Just show the 5 most recent
+                    .forEach(path => {
+                        const fileName = recentFolders[path];
+                        const folderName = path.split('/').pop();
+
+                        // Build a path-based link for these dynamic folders
+                        const myTenant = "pcicgov-my";
+                        const myUserPath = "ro10msd_pcicgov_onmicrosoft_com";
+                        const dynamicLink = `https://${myTenant}.sharepoint.com/my?id=` + encodeURIComponent(`/personal/${myUserPath}/Documents/${path}`);
+
+                        renderCard(container, folderName, fileName, dynamicLink, false);
+                    });
 
             } catch (error) {
                 console.error('Error:', error);
-                document.getElementById('loading').innerText = "Syncing Error. Please refresh.";
             }
+        }
+
+        // HELPER FUNCTION TO RENDER CARDS
+        function renderCard(container, title, lastFile, link, isMain) {
+            const div = document.createElement('div');
+            div.className = 'link-item';
+            if (isMain) div.style.borderLeft = "5px solid #0078d4"; // Highlight main folders
+            div.innerHTML = `
+                <div class="file-info">
+                    <span class="file-name" style="color: #0078d4; font-weight: bold;">📂 ${title}</span>
+                    <span class="folder-path">Last updated: ${lastFile}</span>
+                </div>
+                <div class="actions">
+                    <a href="${link}" class="btn" target="_blank">Open Folder</a>
+                </div>
+            `;
+            container.appendChild(div);
         }
 
         fetchLinks();
