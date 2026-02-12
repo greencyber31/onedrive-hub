@@ -112,14 +112,11 @@
                 const container = document.getElementById('links-container');
                 const loading = document.getElementById('loading');
 
-                // 1. THE DASHBOARD LIST
-                // These paths must match the folder names inside your "Shared" folder exactly.
+                // 1. YOUR CONSOLIDATED MAIN FOLDERS
                 const dashboard = [
-                    { label: "Shared Online MSD Files", path: "", lastFile: "Waiting for update..." },
-                    { label: "Logbooks", path: "LOGBOOKS Uploaded for Encoding and Evaluation", lastFile: "Waiting for update..." },
-                    { label: "DAR", path: "DAR, TRACKER, AND MONITORING & REPORTS/DAR", lastFile: "Waiting for update..." },
-                    { label: "Trackers", path: "DAR, TRACKER, AND MONITORING & REPORTS/TRACKER", lastFile: "Waiting for update..." },
-                    { label: "Monitoring & Reports", path: "DAR, TRACKER, AND MONITORING & REPORTS/MONITORING & REPORTS", lastFile: "Waiting for update..." }
+                    { label: "Shared Online MSD Files", path: "Shared Online MSD Files", lastFile: "No recent activity" },
+                    { label: "Logbooks (Encoding/Evaluation)", path: "Shared Online MSD Files/LOGBOOKS Uploaded for Encoding and Evaluation", lastFile: "No recent activity" },
+                    { label: "DAR, Trackers, & Reports Hub", path: "Shared Online MSD Files/DAR, TRACKER, AND MONITORING & REPORTS", lastFile: "No recent activity" }
                 ];
 
                 // 2. MATCH UPDATES FROM GOOGLE SHEET
@@ -130,14 +127,8 @@
                         const sheetPath = columns[3].trim();
 
                         // Find the matching dashboard item
-                        // specific paths first (non-empty), then fallback to root if needed
-                        let folderMatch = dashboard.find(item => item.path !== "" && sheetPath.includes(item.path));
-
-                        if (!folderMatch) {
-                            // Fallback for the root folder if the path is generic enough
-                            folderMatch = dashboard.find(item => item.path === "" && sheetPath.includes("Shared Online MSD Files"));
-                        }
-
+                        // This checks if the update happened anywhere inside the parent folder path
+                        const folderMatch = dashboard.find(item => sheetPath.includes(item.path));
                         if (folderMatch) {
                             folderMatch.lastFile = fileName;
                         }
@@ -147,26 +138,24 @@
                 loading.style.display = 'none';
                 container.innerHTML = '';
 
-                // 2. THE BASE ADDRESS
+                // 3. RENDER THE DASHBOARD
                 const myTenant = "pcicgov-my";
                 const myUserPath = "ro10msd_pcicgov_onmicrosoft_com";
                 const baseUrl = `https://${myTenant}.sharepoint.com/my?id=`;
-
-                // This is your "Main Entrance"
-                const docRoot = `/personal/${myUserPath}/Documents/RO10 MSD Database 2026/Shared Online MSD Files/`;
+                const docRoot = `/personal/${myUserPath}/Documents/`;
 
                 dashboard.forEach(item => {
-                    // Build the specific address for each button
-                    const fullPath = docRoot + item.path;
-                    // encodeURIComponent ensures the spaces and commas in your folder name don't break the link
-                    const folderLink = baseUrl + encodeURIComponent(fullPath.replace(/\/+$/, ''));
+                    // Encode the link to the Parent Folder
+                    const folderLink = baseUrl + encodeURIComponent(docRoot + item.path);
 
                     const div = document.createElement('div');
                     div.className = 'link-item';
                     div.innerHTML = `
                         <div class="file-info">
-                            <span class="file-name" style="color: #0078d4;">📂 ${item.label}</span>
-                            <span class="folder-path" style="font-style: italic; color: #666;">Latest: ${item.lastFile}</span>
+                            <span class="file-name" style="color: #0078d4; font-size: 1.2em;">📂 ${item.label}</span>
+                            <span class="folder-path" style="font-style: italic; color: #555; margin-top: 5px;">
+                                Latest update in this section: <strong>${item.lastFile}</strong>
+                            </span>
                         </div>
                         <div class="actions">
                             <a href="${folderLink}" class="btn" target="_blank">Open Folder</a>
