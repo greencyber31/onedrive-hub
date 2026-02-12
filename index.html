@@ -112,14 +112,14 @@
                 const container = document.getElementById('links-container');
                 const loading = document.getElementById('loading');
 
-                // 1. YOUR PERMANENT MAIN FOLDERS
-                // Note: The 'path' must match what Power Automate sends to the Google Sheet.
+                // 1. THE DASHBOARD LIST
+                // Note: These paths are RELATIVE to the docRoot below
                 const dashboard = [
-                    { label: "Shared Online MSD Files", path: "Shared Online MSD Files", lastFile: "No recent activity" },
-                    { label: "Logbooks (Encoding/Evaluation)", path: "Shared Online MSD Files/LOGBOOKS Uploaded for Encoding and Evaluation", lastFile: "No recent activity" },
-                    { label: "DAR", path: "Shared Online MSD Files/DAR", lastFile: "No recent activity" },
-                    { label: "Trackers", path: "Shared Online MSD Files/Trackers", lastFile: "No recent activity" },
-                    { label: "Monitoring & Reports", path: "Shared Online MSD Files/Monitoring & Reports", lastFile: "No recent activity" }
+                    { label: "Shared Online MSD Files", path: "", lastFile: "No recent activity" },
+                    { label: "Logbooks (Encoding/Evaluation)", path: "LOGBOOKS Uploaded for Encoding and Evaluation", lastFile: "No recent activity" },
+                    { label: "DAR", path: "DAR", lastFile: "No recent activity" },
+                    { label: "Trackers", path: "Trackers", lastFile: "No recent activity" },
+                    { label: "Monitoring & Reports", path: "Monitoring & Reports", lastFile: "No recent activity" }
                 ];
 
                 // 2. MATCH UPDATES FROM GOOGLE SHEET
@@ -130,8 +130,14 @@
                         const sheetPath = columns[3].trim();
 
                         // Find the matching dashboard item
-                        // This checks if the sheetPath starts with our folder path
-                        const folderMatch = dashboard.find(item => sheetPath.includes(item.path));
+                        // specific paths first (non-empty), then fallback to root if needed
+                        let folderMatch = dashboard.find(item => item.path !== "" && sheetPath.includes(item.path));
+
+                        if (!folderMatch) {
+                            // Fallback for the root folder if the path is generic enough
+                            folderMatch = dashboard.find(item => item.path === "" && sheetPath.includes("Shared Online MSD Files"));
+                        }
+
                         if (folderMatch) {
                             folderMatch.lastFile = fileName;
                         }
@@ -145,11 +151,13 @@
                 const myTenant = "pcicgov-my";
                 const myUserPath = "ro10msd_pcicgov_onmicrosoft_com";
                 const baseUrl = `https://${myTenant}.sharepoint.com/my?id=`;
-                const docRoot = `/personal/${myUserPath}/Documents/`;
+                // This is the "Full Address" to your main Shared folder
+                const docRoot = `/personal/${myUserPath}/Documents/RO10 MSD Database 2026/Shared Online MSD Files/`;
 
                 dashboard.forEach(item => {
-                    // Encode the link
-                    const folderLink = baseUrl + encodeURIComponent(docRoot + item.path);
+                    // We combine docRoot + the specific subfolder path
+                    const fullPath = docRoot + item.path;
+                    const folderLink = baseUrl + encodeURIComponent(fullPath.replace(/\/+$/, '')); // Cleans trailing slashes
 
                     const div = document.createElement('div');
                     div.className = 'link-item';
