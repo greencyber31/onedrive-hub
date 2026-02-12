@@ -112,27 +112,31 @@
                 const container = document.getElementById('links-container');
                 const loading = document.getElementById('loading');
 
-                // 1. THE EXACT DASHBOARD PATHS
-                // We use the full relative path from your "Documents" folder
+                // 1. THE PERMANENT DASHBOARD
+                // I have added the new direct link you just provided!
                 const dashboard = [
                     {
                         label: "Shared Online MSD Files",
                         path: "RO10 MSD Database 2026/Shared Online MSD Files",
-                        lastFile: "No recent activity"
+                        directLink: "https://pcicgov-my.sharepoint.com/:f:/g/personal/ro10msd_pcicgov_onmicrosoft_com/IgBzm_6kW5JhSr4AnwM97HlnAdlBqUuwLAoHRET-OpoALGo?e=AYN2yT",
+                        lastFile: "Waiting for update..."
                     },
                     {
                         label: "Logbooks (Encoding/Evaluation)",
                         path: "RO10 MSD Database 2026/Shared Online MSD Files/LOGBOOKS Uploaded for Encoding and Evaluation",
-                        lastFile: "No recent activity"
+                        directLink: "", // Still waiting for this link!
+                        lastFile: "Waiting for update..."
                     },
                     {
                         label: "DAR, Trackers, & Reports Hub",
                         path: "RO10 MSD Database 2026/Shared Online MSD Files/DAR, TRACKER, AND MONITORING & REPORTS",
-                        lastFile: "No recent activity"
+                        directLink: "https://pcicgov-my.sharepoint.com/:f:/g/personal/ro10msd_pcicgov_onmicrosoft_com/IgBzm_6kW5JhSr4AnwM97HlnAdlBqUuwLAoHRET-OpoALGo?e=nyRBOU",
+                        lastFile: "Waiting for update..."
                     }
                 ];
 
                 // 2. MATCH UPDATES FROM GOOGLE SHEET
+                // This helper still checks the Google Sheet for the "Latest Activity"
                 rows.forEach(row => {
                     const columns = row.split(',');
                     if (columns.length >= 4) {
@@ -140,13 +144,10 @@
                         const sheetPath = columns[3].trim();
 
                         // Find the matching dashboard item
-                        // We relax the match to check if the sheetPath (which likely lacks the "RO10..." prefix) 
-                        // is contained within the dashboard item's path, or vice versa.
+                        // We use the smart matcher to ensure we catch updates even if path formats differ
                         const folderMatch = dashboard.find(item => {
                             // Normalize by identifying the common "Shared Online MSD Files" part
                             if (sheetPath.includes("Shared Online MSD Files") && item.path.includes("Shared Online MSD Files")) {
-                                // Extract the part after "Shared Online MSD Files" for comparison
-                                // This is a heuristic to make the old sheet data work with the new long paths
                                 return sheetPath.includes(item.path.split("Shared Online MSD Files")[1]) ||
                                     item.path.includes(sheetPath.split("Shared Online MSD Files")[1]);
                             }
@@ -162,18 +163,9 @@
                 loading.style.display = 'none';
                 container.innerHTML = '';
 
-                // 3. THE SERVER INFO
-                const myTenant = "pcicgov-my";
-                const myUserPath = "ro10msd_pcicgov_onmicrosoft_com";
-                const baseUrl = `https://${myTenant}.sharepoint.com/my?id=`;
-
-                // This must start with /personal/ and end at /Documents/
-                const docRoot = `/personal/${myUserPath}/Documents/`;
-
                 dashboard.forEach(item => {
-                    // We combine the docRoot (/personal/.../Documents/) with the item.path
-                    const fullPath = docRoot + item.path;
-                    const folderLink = baseUrl + encodeURIComponent(fullPath);
+                    // Use the Direct Link if available, otherwise fallback to a generic search or #
+                    const finalLink = item.directLink || "#";
 
                     const div = document.createElement('div');
                     div.className = 'link-item';
@@ -185,7 +177,7 @@
                             </span>
                         </div>
                         <div class="actions">
-                            <a href="${folderLink}" class="btn" target="_blank">Open Folder</a>
+                            <a href="${finalLink}" class="btn" target="_blank">Open Folder</a>
                         </div>
                     `;
                     container.appendChild(div);
