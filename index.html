@@ -114,9 +114,24 @@
 
                 // 1. PERMANENT DASHBOARD FOLDERS
                 const dashboard = [
-                    { label: "Shared Online MSD Files", path: "RO10 MSD Database 2026/Shared Online MSD Files", directLink: "https://pcicgov-my.sharepoint.com/:f:/g/personal/ro10msd_pcicgov_onmicrosoft_com/IgBzm_6kW5JhSr4AnwM97HlnAdlBqUuwLAoHRET-OpoALGo?e=AYN2yT", lastFile: "No recent activity" },
-                    { label: "Logbooks", path: "RO10 MSD Database 2026/Shared Online MSD Files/LOGBOOKS Uploaded for Encoding and Evaluation", directLink: "", lastFile: "No recent activity" },
-                    { label: "DAR, Trackers, & Reports Hub", path: "RO10 MSD Database 2026/Shared Online MSD Files/DAR, TRACKER, AND MONITORING & REPORTS", directLink: "https://pcicgov-my.sharepoint.com/:f:/g/personal/ro10msd_pcicgov_onmicrosoft_com/IgBzm_6kW5JhSr4AnwM97HlnAdlBqUuwLAoHRET-OpoALGo?e=nyRBOU", lastFile: "No recent activity" }
+                    {
+                        label: "Shared Online MSD Files",
+                        path: "RO10 MSD Database 2026/Shared Online MSD Files",
+                        directLink: "", // Cleared to use fallback
+                        lastFile: "No recent activity"
+                    },
+                    {
+                        label: "Logbooks (Encoding/Evaluation)",
+                        path: "RO10 MSD Database 2026/Shared Online MSD Files/LOGBOOKS Uploaded for Encoding and Evaluation",
+                        directLink: "", // Cleared to use fallback
+                        lastFile: "No recent activity"
+                    },
+                    {
+                        label: "DAR, Trackers, & Reports Hub",
+                        path: "RO10 MSD Database 2026/Shared Online MSD Files/DAR, TRACKER, AND MONITORING & REPORTS",
+                        directLink: "https://pcicgov-my.sharepoint.com/:f:/g/personal/ro10msd_pcicgov_onmicrosoft_com/IgBzm_6kW5JhSr4AnwM97HlnAdlBqUuwLAoHRET-OpoALGo?e=nyRBOU",
+                        lastFile: "No recent activity"
+                    }
                 ];
 
                 // 2. TRACKING RECENT ACTIVITY
@@ -149,8 +164,21 @@
                 container.innerHTML = '<h2>📌 Main Folders</h2>'; // Dashboard Header
 
                 // 3. RENDER DASHBOARD (THE TOP SECTION)
+                const myTenant = "pcicgov-my";
+                const myUserPath = "ro10msd_pcicgov_onmicrosoft_com";
+                const baseUrl = `https://${myTenant}.sharepoint.com/my?id=`;
+                const docRoot = `/personal/${myUserPath}/Documents/`;
+
                 dashboard.forEach(item => {
-                    const finalLink = item.directLink || "#";
+                    // Default to Direct Link if available
+                    let finalLink = item.directLink;
+
+                    // If no Direct Link is provided (or for folders that need the standard path), construct it
+                    if (!finalLink) {
+                        const fullPath = docRoot + item.path;
+                        finalLink = baseUrl + encodeURIComponent(fullPath);
+                    }
+
                     renderCard(container, item.label, item.lastFile, finalLink, true);
                 });
 
