@@ -112,11 +112,24 @@
                 const container = document.getElementById('links-container');
                 const loading = document.getElementById('loading');
 
-                // 1. YOUR CONSOLIDATED MAIN FOLDERS
+                // 1. THE EXACT DASHBOARD PATHS
+                // We use the full relative path from your "Documents" folder
                 const dashboard = [
-                    { label: "Shared Online MSD Files", path: "Shared Online MSD Files", lastFile: "No recent activity" },
-                    { label: "Logbooks (Encoding/Evaluation)", path: "Shared Online MSD Files/LOGBOOKS Uploaded for Encoding and Evaluation", lastFile: "No recent activity" },
-                    { label: "DAR, Trackers, & Reports Hub", path: "Shared Online MSD Files/DAR, TRACKER, AND MONITORING & REPORTS", lastFile: "No recent activity" }
+                    {
+                        label: "Shared Online MSD Files",
+                        path: "RO10 MSD Database 2026/Shared Online MSD Files",
+                        lastFile: "No recent activity"
+                    },
+                    {
+                        label: "Logbooks (Encoding/Evaluation)",
+                        path: "RO10 MSD Database 2026/Shared Online MSD Files/LOGBOOKS Uploaded for Encoding and Evaluation",
+                        lastFile: "No recent activity"
+                    },
+                    {
+                        label: "DAR, Trackers, & Reports Hub",
+                        path: "RO10 MSD Database 2026/Shared Online MSD Files/DAR, TRACKER, AND MONITORING & REPORTS",
+                        lastFile: "No recent activity"
+                    }
                 ];
 
                 // 2. MATCH UPDATES FROM GOOGLE SHEET
@@ -127,8 +140,19 @@
                         const sheetPath = columns[3].trim();
 
                         // Find the matching dashboard item
-                        // This checks if the update happened anywhere inside the parent folder path
-                        const folderMatch = dashboard.find(item => sheetPath.includes(item.path));
+                        // We relax the match to check if the sheetPath (which likely lacks the "RO10..." prefix) 
+                        // is contained within the dashboard item's path, or vice versa.
+                        const folderMatch = dashboard.find(item => {
+                            // Normalize by identifying the common "Shared Online MSD Files" part
+                            if (sheetPath.includes("Shared Online MSD Files") && item.path.includes("Shared Online MSD Files")) {
+                                // Extract the part after "Shared Online MSD Files" for comparison
+                                // This is a heuristic to make the old sheet data work with the new long paths
+                                return sheetPath.includes(item.path.split("Shared Online MSD Files")[1]) ||
+                                    item.path.includes(sheetPath.split("Shared Online MSD Files")[1]);
+                            }
+                            return sheetPath.includes(item.path);
+                        });
+
                         if (folderMatch) {
                             folderMatch.lastFile = fileName;
                         }
@@ -138,15 +162,18 @@
                 loading.style.display = 'none';
                 container.innerHTML = '';
 
-                // 3. RENDER THE DASHBOARD
+                // 3. THE SERVER INFO
                 const myTenant = "pcicgov-my";
                 const myUserPath = "ro10msd_pcicgov_onmicrosoft_com";
                 const baseUrl = `https://${myTenant}.sharepoint.com/my?id=`;
+
+                // This must start with /personal/ and end at /Documents/
                 const docRoot = `/personal/${myUserPath}/Documents/`;
 
                 dashboard.forEach(item => {
-                    // Encode the link to the Parent Folder
-                    const folderLink = baseUrl + encodeURIComponent(docRoot + item.path);
+                    // We combine the docRoot (/personal/.../Documents/) with the item.path
+                    const fullPath = docRoot + item.path;
+                    const folderLink = baseUrl + encodeURIComponent(fullPath);
 
                     const div = document.createElement('div');
                     div.className = 'link-item';
@@ -154,7 +181,7 @@
                         <div class="file-info">
                             <span class="file-name" style="color: #0078d4; font-size: 1.2em;">📂 ${item.label}</span>
                             <span class="folder-path" style="font-style: italic; color: #555; margin-top: 5px;">
-                                Latest update in this section: <strong>${item.lastFile}</strong>
+                                Latest update: <strong>${item.lastFile}</strong>
                             </span>
                         </div>
                         <div class="actions">
