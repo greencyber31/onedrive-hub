@@ -88,6 +88,9 @@
 <body>
     <div class="card">
         <h1>PCIC Shared Hub</h1>
+        <p id="last-sync" style="font-size: 0.8em; color: #999; margin-top: -15px; margin-bottom: 20px;">
+            Syncing with PCIC Database...
+        </p>
         <div id="loading">Connecting to database...</div>
         <div id="links-container"></div>
     </div>
@@ -201,6 +204,8 @@
 
                         renderCard(container, folderName, fileName, dynamicLink, false);
                     });
+
+                document.getElementById('last-sync').innerText = "Last synced: " + new Date().toLocaleString();
 
             } catch (error) {
                 console.error('Error:', error);
