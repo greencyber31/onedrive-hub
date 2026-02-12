@@ -192,7 +192,7 @@
                 const dashPaths = dashboard.map(d => d.path);
                 Object.keys(recentFolders)
                     .filter(path => !dashPaths.includes(path))
-                    .slice(0, 5) // Just show the 5 most recent
+                    .slice(0, 15) // Show the 15 most recent
                     .forEach(path => {
                         const fileName = recentFolders[path];
                         const folderName = path.split('/').pop();
