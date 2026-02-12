@@ -126,7 +126,13 @@
                     const columns = row.split(',');
                     if (columns.length >= 4) {
                         const fileName = columns[1].trim();
-                        const sheetPath = columns[3].trim();
+                        let sheetPath = columns[3].trim();
+
+                        // FIX: If the path provided by the sheet includes only the file path, we strip the filename
+                        // This ensures the link opens the FOLDER, not the FILE
+                        if (sheetPath.endsWith("/" + fileName)) {
+                            sheetPath = sheetPath.substring(0, sheetPath.lastIndexOf('/'));
+                        }
 
                         // Update Dashboard activity
                         const dashMatch = dashboard.find(item => sheetPath.includes(item.path));
