@@ -152,33 +152,51 @@
                     const columns = row.split(',');
                     if (columns.length >= 4) {
                         const fileName = columns[1].trim();
-                        let sheetPath = columns[3].trim();
+                        let rawPath = columns[3].trim(); // This is the /drives/b!... string
 
-                        // 1. SAFETY DECODE: If the path looks like Base64 (gibberish), decode it
-                        try {
-                            if (!sheetPath.includes('/') && sheetPath.length > 10) {
-                                sheetPath = atob(sheetPath); // Decodes Base64 to text
-                            }
-                        } catch (e) {
-                            console.log("Path already plain text");
+                        // 1. EXTRACT FOLDER NAME
+                        // We remove the filename from the end of the string
+                        let folderPathOnly = rawPath.replace(fileName, '');
+
+                        // Remove any trailing slashes so we can grab the last folder
+                        folderPathOnly = folderPathOnly.replace(/\/+$/, '');
+
+                        // Grab the name after the final remaining slash
+                        const folderName = folderPathOnly.split('/').pop();
+
+                        // 2. CONSTRUCT THE WORKING LINK
+                        // We need to extract the part AFTER "/root:" to make a clickable link
+                        let webPath = "";
+                        if (rawPath.includes('/root:')) {
+                            webPath = rawPath.split('/root:')[1]; // Gets "/RO10 MSD Database 2026/..."
+                            webPath = webPath.replace(fileName, ''); // Remove filename for the link
                         }
 
-                        // 2. CLEANING: Remove the filename to get the folder path
-                        if (sheetPath.includes(fileName)) {
-                            sheetPath = sheetPath.replace(fileName, '');
-                        }
+                        // Ensure webPath is clean of trailing slashes
+                        webPath = webPath.replace(/\/+$/, '');
 
-                        // Ensure the path is clean of trailing slashes
-                        sheetPath = sheetPath.replace(/\/+$/, '');
+                        const myTenant = "pcicgov-my";
+                        const myUserPath = "ro10msd_pcicgov_onmicrosoft_com";
+                        const baseUrl = `https://${myTenant}.sharepoint.com/my?id=`;
 
-                        // 3. LOGIC: Update Dashboard or Add to Recent
-                        const dashMatch = dashboard.find(item => sheetPath.includes(item.path));
+                        const finalLink = baseUrl + encodeURIComponent(`/personal/${myUserPath}/Documents${webPath}`);
+
+                        // Update Dashboard activity
+                        // Check if the path contains dashboard item path
+                        // Remove leading slash for comparison if necessary
+                        const cleanWebPath = webPath.startsWith('/') ? webPath.substring(1) : webPath;
+                        const dashMatch = dashboard.find(item => cleanWebPath.includes(item.path));
                         if (dashMatch) {
                             dashMatch.lastFile = fileName;
                         }
 
-                        if (!recentFolders[sheetPath]) {
-                            recentFolders[sheetPath] = fileName;
+                        // 3. STORE FOR RECENT ACTIVITY
+                        if (!recentFolders[webPath]) {
+                            recentFolders[webPath] = {
+                                fileName: fileName,
+                                folderName: folderName,
+                                finalLink: finalLink
+                            };
                         }
                     }
                 });
@@ -208,24 +226,20 @@
                 // 4. RENDER RECENT FEED (THE BOTTOM SECTION)
                 container.innerHTML += '<h2 style="margin-top:40px;">🕒 Recent Activity</h2>';
 
+                // Get dashboard paths for exclusion
+                // We need to be careful as recentFolder keys are webPaths (with leading / usually)
+                // and dashboard paths might not have leading /
                 const dashPaths = dashboard.map(d => d.path);
+
                 Object.keys(recentFolders)
-                    .filter(path => !dashPaths.includes(path))
+                    .filter(path => {
+                        const cleanPath = path.startsWith('/') ? path.substring(1) : path;
+                        return !dashPaths.some(dp => cleanPath.includes(dp));
+                    })
                     .slice(0, 15)
                     .forEach(path => {
-                        const fileName = recentFolders[path];
-                        const folderName = path.split('/').pop();
-
-                        // Build a path-based link for these dynamic folders
-                        const myTenant = "pcicgov-my";
-                        const myUserPath = "ro10msd_pcicgov_onmicrosoft_com";
-                        const baseUrl = `https://${myTenant}.sharepoint.com/my?id=`;
-
-                        // Since Power Automate's "Path" already starts with /personal/ or /Documents/
-                        // we just need to encode it and attach it to the baseUrl
-                        const dynamicLink = baseUrl + encodeURIComponent(path);
-
-                        renderCard(container, folderName, fileName, dynamicLink, false);
+                        const item = recentFolders[path];
+                        renderCard(container, item.folderName, item.fileName, item.finalLink, false);
                     });
 
                 document.getElementById('last-sync').innerText = "Last synced: " + new Date().toLocaleString();
