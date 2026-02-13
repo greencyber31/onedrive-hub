@@ -146,10 +146,9 @@
                         const fileName = columns[1].trim();
                         let sheetPath = columns[3].trim();
 
-                        // FIX: If the path provided by the sheet includes only the file path, we strip the filename
-                        // This ensures the link opens the FOLDER, not the FILE
-                        if (sheetPath.endsWith("/" + fileName)) {
-                            sheetPath = sheetPath.substring(0, sheetPath.lastIndexOf('/'));
+                        // This line handles the cleaning that Power Automate couldn't do
+                        if (sheetPath.includes(fileName)) {
+                            sheetPath = sheetPath.replace(fileName, '');
                         }
 
                         // Update Dashboard activity
@@ -196,25 +195,14 @@
                         const fileName = recentFolders[path];
                         const folderName = path.split('/').pop();
 
+                        // Build a path-based link for these dynamic folders
                         const myTenant = "pcicgov-my";
                         const myUserPath = "ro10msd_pcicgov_onmicrosoft_com";
                         const baseUrl = `https://${myTenant}.sharepoint.com/my?id=`;
 
-                        // --- UNIVERSAL PATH INTELLIGENCE ---
-                        let finalPath = path;
-
-                        // If the path from the sheet is missing the 'RO10' prefix, add it.
-                        // If it ALREADY has it, we leave it alone so we don't double it up.
-                        if (!finalPath.includes("RO10 MSD Database 2026")) {
-                            finalPath = "RO10 MSD Database 2026/" + finalPath;
-                        }
-
-                        // Ensure it starts with the mandatory SharePoint root
-                        const fullDynamicPath = `/personal/${myUserPath}/Documents/${finalPath}`;
-
-                        // Clean up any double slashes and encode
-                        const cleanedPath = fullDynamicPath.replace(/\/+/g, '/').replace(/\/+$/, '');
-                        const dynamicLink = baseUrl + encodeURIComponent(cleanedPath);
+                        // Since Power Automate's "Path" already starts with /personal/ or /Documents/
+                        // we just need to encode it and attach it to the baseUrl
+                        const dynamicLink = baseUrl + encodeURIComponent(path);
 
                         renderCard(container, folderName, fileName, dynamicLink, false);
                     });
