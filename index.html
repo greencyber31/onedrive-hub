@@ -152,50 +152,52 @@
                     const columns = row.split(',');
                     if (columns.length >= 4) {
                         const fileName = columns[1].trim();
-                        let rawPath = columns[3].trim(); // This is the /drives/b!... string
+                        const rawPath = columns[3].trim(); // The /drives/b!... string
 
-                        // 1. EXTRACT FOLDER NAME
-                        // We remove the filename from the end of the string
-                        let folderPathOnly = rawPath.replace(fileName, '');
-
-                        // Remove any trailing slashes so we can grab the last folder
-                        folderPathOnly = folderPathOnly.replace(/\/+$/, '');
-
-                        // Grab the name after the final remaining slash
-                        const folderName = folderPathOnly.split('/').pop();
-
-                        // 2. CONSTRUCT THE WORKING LINK
-                        // We need to extract the part AFTER "/root:" to make a clickable link
-                        let webPath = "";
+                        // 1. GET THE HUMAN-READABLE PART
+                        // Everything after "/root:" is your actual folder structure
+                        let internalPath = "";
                         if (rawPath.includes('/root:')) {
-                            webPath = rawPath.split('/root:')[1]; // Gets "/RO10 MSD Database 2026/..."
-                            webPath = webPath.replace(fileName, ''); // Remove filename for the link
+                            internalPath = rawPath.split('/root:')[1];
+                        } else {
+                            internalPath = rawPath;
                         }
 
-                        // Ensure webPath is clean of trailing slashes
-                        webPath = webPath.replace(/\/+$/, '');
-
-                        const myTenant = "pcicgov-my";
-                        const myUserPath = "ro10msd_pcicgov_onmicrosoft_com";
-                        const baseUrl = `https://${myTenant}.sharepoint.com/my?id=`;
-
-                        const finalLink = baseUrl + encodeURIComponent(`/personal/${myUserPath}/Documents${webPath}`);
-
                         // Update Dashboard activity
-                        // Check if the path contains dashboard item path
                         // Remove leading slash for comparison if necessary
-                        const cleanWebPath = webPath.startsWith('/') ? webPath.substring(1) : webPath;
-                        const dashMatch = dashboard.find(item => cleanWebPath.includes(item.path));
+                        const cleanInternalPathForDash = internalPath.startsWith('/') ? internalPath.substring(1) : internalPath;
+                        const dashMatch = dashboard.find(item => cleanInternalPathForDash.includes(item.path));
                         if (dashMatch) {
                             dashMatch.lastFile = fileName;
                         }
 
-                        // 3. STORE FOR RECENT ACTIVITY
-                        if (!recentFolders[webPath]) {
-                            recentFolders[webPath] = {
-                                fileName: fileName,
-                                folderName: folderName,
-                                finalLink: finalLink
+                        // 2. EXTRACT THE FOLDER NAME
+                        // First, remove the filename from the path
+                        let folderOnlyPath = internalPath.replace(fileName, '');
+                        // Remove the trailing slash so the folder name is the "last" item
+                        folderOnlyPath = folderOnlyPath.replace(/\/+$/, '');
+                        // The last item in the breadcrumb is your folder name
+                        const folderDisplayName = folderOnlyPath.split('/').pop() || "General Folder";
+
+                        // 3. CONSTRUCT THE BUTTON LINK
+                        const myTenant = "pcicgov-my";
+                        const myUserPath = "ro10msd_pcicgov_onmicrosoft_com";
+                        const baseUrl = `https://${myTenant}.sharepoint.com/my?id=`;
+
+                        // Ensure internalPath starts with a single slash and no filename
+                        const cleanInternalPath = folderOnlyPath.startsWith('/') ? folderOnlyPath : '/' + folderOnlyPath;
+                        const fullSharePointPath = `/personal/${myUserPath}/Documents${cleanInternalPath}`;
+
+                        // Clean up any double slashes (e.g. //personal)
+                        const finalPathForLink = fullSharePointPath.replace(/\/+/g, '/');
+                        const dynamicLink = baseUrl + encodeURIComponent(finalPathForLink);
+
+                        // 4. STORE IN RECENT FOLDERS
+                        // We use the folderDisplayName for the label and dynamicLink for the button
+                        if (!recentFolders[folderDisplayName]) {
+                            recentFolders[folderDisplayName] = {
+                                latestFile: fileName,
+                                link: dynamicLink
                             };
                         }
                     }
@@ -226,21 +228,10 @@
                 // 4. RENDER RECENT FEED (THE BOTTOM SECTION)
                 container.innerHTML += '<h2 style="margin-top:40px;">🕒 Recent Activity</h2>';
 
-                // Get dashboard paths for exclusion
-                // We need to be careful as recentFolder keys are webPaths (with leading / usually)
-                // and dashboard paths might not have leading /
-                const dashPaths = dashboard.map(d => d.path);
-
-                Object.keys(recentFolders)
-                    .filter(path => {
-                        const cleanPath = path.startsWith('/') ? path.substring(1) : path;
-                        return !dashPaths.some(dp => cleanPath.includes(dp));
-                    })
-                    .slice(0, 15)
-                    .forEach(path => {
-                        const item = recentFolders[path];
-                        renderCard(container, item.folderName, item.fileName, item.finalLink, false);
-                    });
+                Object.keys(recentFolders).slice(0, 15).forEach(folderName => {
+                    const data = recentFolders[folderName];
+                    renderCard(container, folderName, data.latestFile, data.link, false);
+                });
 
                 document.getElementById('last-sync').innerText = "Last synced: " + new Date().toLocaleString();
 
