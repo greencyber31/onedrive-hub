@@ -109,9 +109,17 @@
 
         async function fetchLinks() {
             try {
-                const response = await fetch(SHEET_URL);
+                // This adds a unique timestamp to the end of the URL so the browser can't cache it
+                const separator = SHEET_URL.includes('?') ? '&' : '?';
+                const cacheBuster = separator + "t=" + new Date().getTime();
+                const response = await fetch(SHEET_URL + cacheBuster);
                 const data = await response.text();
-                const rows = data.split('\n').slice(1);
+                let rows = data.split('\n').slice(1);
+
+                // THE FIX: Reverse the rows so the newest entries (bottom of sheet) 
+                // show up at the top of the "Recent Activity" list
+                rows.reverse();
+
                 const container = document.getElementById('links-container');
                 const loading = document.getElementById('loading');
 
