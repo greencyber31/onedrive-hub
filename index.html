@@ -146,16 +146,29 @@
                         const fileName = columns[1].trim();
                         let sheetPath = columns[3].trim();
 
-                        // This line handles the cleaning that Power Automate couldn't do
+                        // 1. SAFETY DECODE: If the path looks like Base64 (gibberish), decode it
+                        try {
+                            if (!sheetPath.includes('/') && sheetPath.length > 10) {
+                                sheetPath = atob(sheetPath); // Decodes Base64 to text
+                            }
+                        } catch (e) {
+                            console.log("Path already plain text");
+                        }
+
+                        // 2. CLEANING: Remove the filename to get the folder path
                         if (sheetPath.includes(fileName)) {
                             sheetPath = sheetPath.replace(fileName, '');
                         }
 
-                        // Update Dashboard activity
-                        const dashMatch = dashboard.find(item => sheetPath.includes(item.path));
-                        if (dashMatch) { dashMatch.lastFile = fileName; }
+                        // Ensure the path is clean of trailing slashes
+                        sheetPath = sheetPath.replace(/\/+$/, '');
 
-                        // Collect for "Recent Activity" list
+                        // 3. LOGIC: Update Dashboard or Add to Recent
+                        const dashMatch = dashboard.find(item => sheetPath.includes(item.path));
+                        if (dashMatch) {
+                            dashMatch.lastFile = fileName;
+                        }
+
                         if (!recentFolders[sheetPath]) {
                             recentFolders[sheetPath] = fileName;
                         }
